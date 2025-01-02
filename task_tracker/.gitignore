@@ -162,4 +162,7 @@ cython_debug/
 #.idea/
 
 #DataBase
-DataBase.json
+tasks.json
+
+#flake8
+.flake8
