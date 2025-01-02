@@ -1,4 +1,3 @@
-import json
 import os
 import unittest
 from datetime import datetime
@@ -60,7 +59,7 @@ class TestTaskManager(unittest.TestCase):
         task = Task(id=1, description="Test Task")
         self.task_manager.add_task(task)
         self.assertIn(1, self.task_manager.tasks)
-        self.assertEqual(self.task_manager.tasks[1].description,"Test Task")
+        self.assertEqual(self.task_manager.tasks[1].description, "Test Task")
 
     def test_update_task(self):
         task = Task(id=1, description="Test Task")
@@ -96,7 +95,7 @@ class TestTaskManager(unittest.TestCase):
 
         new_manager = TaskManager(filename=self.test_file)
         self.assertIn(1, new_manager.tasks)
-        self.assertEqual(new_manager.tasks[1].description,"Task to save")
+        self.assertEqual(new_manager.tasks[1].description, "Task to save")
 
 
 if __name__ == '__main__':
