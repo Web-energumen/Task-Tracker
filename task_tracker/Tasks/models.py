@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from enum import Enum
 
@@ -20,7 +21,7 @@ class Task:
         self.id = id
         self.description = description
         self._status = status
-        self._created_at = self.formatted_now()
+        self._created_at = datetime.now()
         self._updated_at = self._created_at
 
     @property
@@ -33,7 +34,7 @@ class Task:
 
     def _update_time(self):
         """Update the updated_at timestamp."""
-        self._updated_at = self.formatted_now()
+        self._updated_at = datetime.now()
 
     @property
     def status(self):
@@ -41,7 +42,7 @@ class Task:
 
     def updated_status(self, new_status):
         if not isinstance(new_status, Status):
-            raise ValueError("new_status must be a Status")
+            raise ValueError("new_status must be an instance of Status Enum")
         self._status = new_status
         self._update_time()
 
@@ -49,6 +50,7 @@ class Task:
         if not isinstance(new_description, str) or not new_description.strip():
             raise ValueError("new_description must be a non-empty string")
         self.description = new_description
+        self._update_time()
 
     def to_dict(self):
         """Serialising an object into a dictionary for writing to JSON."""
@@ -56,8 +58,8 @@ class Task:
             "id": self.id,
             "description": self.description,
             "status": self.status.value,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
+            "created_at": self.created_at.strftime(self.DATETIME_FORMAT),
+            "updated_at": self.updated_at.strftime(self.DATETIME_FORMAT),
         }
 
     def _restore_from_data(self, created_at, updated_at):
@@ -85,3 +87,50 @@ class Task:
     def formatted_now(cls):
         """Returns the current date and time in the specified format."""
         return datetime.now().strftime(cls.DATETIME_FORMAT)
+
+
+class TaskManager:
+    def __init__(self, filename="tasks.json"):
+        self.filename = filename
+        self.tasks = {}
+        self.load_from_file()
+
+    def add_task(self, task):
+        if task.id in self.tasks:
+            raise ValueError(f"Task with id {task.id} already exists")
+        self.tasks[task.id] = task
+        self.save_to_file()
+
+    def update_task(self, task_id, description=None, status=None):
+        task = self.tasks.get(task_id)
+        if not task:
+            raise ValueError(f"Task with id {task_id} not found")
+        if description:
+            task.update_description(description)
+        if status:
+            task.updated_status(status)
+        self.save_to_file()
+
+    def delete_task(self, task_id):
+        if task_id in self.tasks:
+            del self.tasks[task_id]
+            self.save_to_file()
+        else:
+            raise ValueError(f"Task with id {task_id} not found")
+
+    def list_tasks(self, status=None):
+        if status:
+            return [task for task in self.tasks.values() if task.status == status]
+        return list(self.tasks.values())
+
+    def save_to_file(self):
+        with open(self.filename, "w", encoding="utf-8") as file:
+            json.dump([task.to_dict() for task in self.tasks.values()], file, indent=4)
+
+    def load_from_file(self):
+        try:
+            with open(self.filename, "r", encoding="utf-8") as file:
+                tasks_data = json.load(file)
+                self.tasks = {task["id"]: Task.from_dict(task) for task in tasks_data}
+        except (FileNotFoundError, json.JSONDecodeError):
+            self.tasks = {}
